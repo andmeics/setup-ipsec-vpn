@@ -73,9 +73,6 @@ os_ver=$(sed 's/\..*//' /etc/debian_version | tr -dc 'A-Za-z0-9')
 if [ "$os_ver" = "8" ] || [ "$os_ver" = "jessiesid" ]; then
   exiterr "Debian 8 or Ubuntu < 16.04 is not supported."
 fi
-if [ "$os_ver" = "10" ] && [ ! -e /dev/ppp ]; then
-  exiterr "/dev/ppp is missing. Debian 10 users, see: https://git.io/vpndebian10"
-fi
 
 if [ -f /proc/user_beancounters ]; then
   exiterr "OpenVZ VPS is not supported."
@@ -184,7 +181,7 @@ bigecho "Installing packages required for the VPN..."
   apt-get -yqq install libnss3-dev libnspr4-dev pkg-config \
     libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev \
     libcurl4-nss-dev flex bison gcc make libnss3-tools \
-    libevent-dev libsystemd-dev uuid-runtime ppp xl2tpd >/dev/null
+    libevent-dev libsystemd-dev uuid-runtime >/dev/null
 ) || exiterr2
 
 bigecho "Installing Fail2Ban to protect SSH..."
@@ -251,9 +248,6 @@ fi
 
 bigecho "Creating VPN configuration..."
 
-L2TP_NET=${VPN_L2TP_NET:-'192.168.42.0/24'}
-L2TP_LOCAL=${VPN_L2TP_LOCAL:-'192.168.42.1'}
-L2TP_POOL=${VPN_L2TP_POOL:-'192.168.42.10-192.168.42.250'}
 XAUTH_NET=${VPN_XAUTH_NET:-'192.168.43.0/24'}
 XAUTH_POOL=${VPN_XAUTH_POOL:-'192.168.43.10-192.168.43.250'}
 DNS_SRV1=${VPN_DNS_SRV1:-'8.8.8.8'}
@@ -267,7 +261,7 @@ cat > /etc/ipsec.conf <<EOF
 version 2.0
 
 config setup
-  virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET,%v4:!$XAUTH_NET
+  virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$XAUTH_NET
   uniqueids=no
 
 conn shared
@@ -288,13 +282,6 @@ conn shared
   ikelifetime=24h
   salifetime=24h
   sha2-truncbug=no
-
-conn l2tp-psk
-  auto=add
-  leftprotoport=17/1701
-  rightprotoport=17/%any
-  type=transport
-  also=shared
 
 conn xauth-psk
   auto=add
@@ -322,52 +309,6 @@ fi
 conf_bk "/etc/ipsec.secrets"
 cat > /etc/ipsec.secrets <<EOF
 %any  %any  : PSK "$VPN_IPSEC_PSK"
-EOF
-
-# Create xl2tpd config
-conf_bk "/etc/xl2tpd/xl2tpd.conf"
-cat > /etc/xl2tpd/xl2tpd.conf <<EOF
-[global]
-port = 1701
-
-[lns default]
-ip range = $L2TP_POOL
-local ip = $L2TP_LOCAL
-require chap = yes
-refuse pap = yes
-require authentication = yes
-name = l2tpd
-pppoptfile = /etc/ppp/options.xl2tpd
-length bit = yes
-EOF
-
-# Set xl2tpd options
-conf_bk "/etc/ppp/options.xl2tpd"
-cat > /etc/ppp/options.xl2tpd <<EOF
-+mschap-v2
-ipcp-accept-local
-ipcp-accept-remote
-noccp
-auth
-mtu 1280
-mru 1280
-proxyarp
-lcp-echo-failure 4
-lcp-echo-interval 30
-connect-delay 5000
-ms-dns $DNS_SRV1
-EOF
-
-if [ -z "$VPN_DNS_SRV1" ] || [ -n "$VPN_DNS_SRV2" ]; then
-cat >> /etc/ppp/options.xl2tpd <<EOF
-ms-dns $DNS_SRV2
-EOF
-fi
-
-# Create VPN credentials
-conf_bk "/etc/ppp/chap-secrets"
-cat > /etc/ppp/chap-secrets <<EOF
-"$VPN_USER" l2tpd "$VPN_PASSWORD" *
 EOF
 
 conf_bk "/etc/ipsec.d/passwd"
@@ -415,21 +356,14 @@ fi
 if [ "$ipt_flag" = "1" ]; then
   service fail2ban stop >/dev/null 2>&1
   iptables-save > "$IPT_FILE.old-$SYS_DT"
-  iptables -I INPUT 1 -p udp --dport 1701 -m policy --dir in --pol none -j DROP
   iptables -I INPUT 2 -m conntrack --ctstate INVALID -j DROP
   iptables -I INPUT 3 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
   iptables -I INPUT 4 -p udp -m multiport --dports 500,4500 -j ACCEPT
-  iptables -I INPUT 5 -p udp --dport 1701 -m policy --dir in --pol ipsec -j ACCEPT
-  iptables -I INPUT 6 -p udp --dport 1701 -j DROP
   iptables -I FORWARD 1 -m conntrack --ctstate INVALID -j DROP
-  iptables -I FORWARD 2 -i "$NET_IFACE" -o ppp+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  iptables -I FORWARD 3 -i ppp+ -o "$NET_IFACE" -j ACCEPT
-  iptables -I FORWARD 4 -i ppp+ -o ppp+ -s "$L2TP_NET" -d "$L2TP_NET" -j ACCEPT
   iptables -I FORWARD 5 -i "$NET_IFACE" -d "$XAUTH_NET" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
   iptables -I FORWARD 6 -s "$XAUTH_NET" -o "$NET_IFACE" -j ACCEPT
   iptables -A FORWARD -j DROP
   iptables -t nat -I POSTROUTING -s "$XAUTH_NET" -o "$NET_IFACE" -m policy --dir out --pol none -j MASQUERADE
-  iptables -t nat -I POSTROUTING -s "$L2TP_NET" -o "$NET_IFACE" -j MASQUERADE
   echo "# Modified by hwdsl2 VPN script" > "$IPT_FILE"
   iptables-save >> "$IPT_FILE"
 
@@ -481,7 +415,7 @@ EOF
   fi
 fi
 
-for svc in fail2ban ipsec xl2tpd; do
+for svc in fail2ban ipsec; do
   update-rc.d "$svc" enable >/dev/null 2>&1
   systemctl enable "$svc" 2>/dev/null
 done
@@ -498,7 +432,6 @@ cat >> /etc/rc.local <<'EOF'
 # Added by hwdsl2 VPN script
 (sleep 15
 service ipsec restart
-service xl2tpd restart
 echo 1 > /proc/sys/net/ipv4/ip_forward)&
 exit 0
 EOF
@@ -509,12 +442,11 @@ bigecho "Starting services..."
 sysctl -e -q -p
 
 chmod +x /etc/rc.local
-chmod 600 /etc/ipsec.secrets* /etc/ppp/chap-secrets* /etc/ipsec.d/passwd*
+chmod 600 /etc/ipsec.secrets* /etc/ipsec.d/passwd*
 
 mkdir -p /run/pluto
 service fail2ban restart 2>/dev/null
 service ipsec restart 2>/dev/null
-service xl2tpd restart 2>/dev/null
 
 swan_ver_url="https://dl.ls20.com/v1/$os_type/$os_ver/swanver?arch=$os_arch&ver=$SWAN_VER"
 swan_ver_latest=$(wget -t 3 -T 15 -qO- "$swan_ver_url")
