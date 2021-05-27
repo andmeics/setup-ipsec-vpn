@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Script to update VPN users for both IPsec/L2TP and Cisco IPsec
+# Script to update VPN users for both IPsec and Cisco IPsec
 #
 # Copyright (C) 2018-2021 Lin Song <linsongui@gmail.com>
 #
@@ -45,7 +45,7 @@ if [ "$(id -u)" != 0 ]; then
 fi
 
 if ! grep -qs "hwdsl2 VPN script" /etc/sysctl.conf \
-  || [ ! -f /etc/ppp/chap-secrets ] || [ ! -f /etc/ipsec.d/passwd ]; then
+  ||[ ! -f /etc/ipsec.d/passwd ]; then
 cat 1>&2 <<'EOF'
 Error: Your must first set up the IPsec VPN server before updating VPN users.
        See: https://github.com/hwdsl2/setup-ipsec-vpn
@@ -88,7 +88,7 @@ clear
 cat <<'EOF'
 
 Welcome! This script will update VPN user accounts for both
-IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes.
+IPsec and IPsec/XAuth ("Cisco IPsec") modes.
 
 WARNING: *ALL* existing VPN users will be removed and replaced
          with the users listed below.
@@ -139,9 +139,8 @@ case $response in
 esac
 
 # Backup and remove config files
-conf_bk "/etc/ppp/chap-secrets"
 conf_bk "/etc/ipsec.d/passwd"
-/bin/rm -f /etc/ppp/chap-secrets /etc/ipsec.d/passwd
+/bin/rm -f /etc/ipsec.d/passwd
 
 # Update VPN users
 count=1
@@ -149,9 +148,6 @@ vpn_user=$(printf '%s' "$VPN_USERS" | cut -d ' ' -f 1)
 vpn_password=$(printf '%s' "$VPN_PASSWORDS" | cut -d ' ' -f 1)
 while [ -n "$vpn_user" ] && [ -n "$vpn_password" ]; do
   vpn_password_enc=$(openssl passwd -1 "$vpn_password")
-cat >> /etc/ppp/chap-secrets <<EOF
-"$vpn_user" l2tpd "$vpn_password" *
-EOF
 cat >> /etc/ipsec.d/passwd <<EOF
 $vpn_user:$vpn_password_enc:xauth-psk
 EOF
@@ -161,7 +157,7 @@ EOF
 done
 
 # Update file attributes
-chmod 600 /etc/ppp/chap-secrets* /etc/ipsec.d/passwd*
+chmod 600 /etc/ipsec.d/passwd*
 
 cat <<'EOF'
 Done!
