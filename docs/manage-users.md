@@ -2,7 +2,7 @@
 
 *Read this in other languages: [English](manage-users.md), [简体中文](manage-users-zh.md).*
 
-By default, a single user account for VPN login is created. If you wish to view or manage users for the `IPsec/L2TP` and `IPsec/XAuth ("Cisco IPsec")` modes, read this document. For IKEv2, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
+By default, a single user account for VPN login is created. If you wish to view or manage users for the IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes, read this document. For IKEv2, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
 
 - [View or update the IPsec PSK](#view-or-update-the-ipsec-psk)
 - [View VPN users](#view-vpn-users)
@@ -28,9 +28,9 @@ service xl2tpd restart
 
 ## View VPN users
 
-By default, the VPN setup scripts will create the same VPN user for both `IPsec/L2TP` and `IPsec/XAuth ("Cisco IPsec")` modes.
+By default, the VPN setup scripts will create the same VPN user for both IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes.
 
-For `IPsec/L2TP`, VPN users are specified in `/etc/ppp/chap-secrets`. The format of this file is:
+For IPsec/L2TP, VPN users are specified in `/etc/ppp/chap-secrets`. The format of this file is:
 
 ```bash
 "username1"  l2tpd  "password1"  *
@@ -38,11 +38,11 @@ For `IPsec/L2TP`, VPN users are specified in `/etc/ppp/chap-secrets`. The format
 ... ...
 ```
 
-For `IPsec/XAuth ("Cisco IPsec")`, VPN users are specified in `/etc/ipsec.d/passwd`. Passwords in this file are salted and hashed. See [Manually manage VPN users](#manually-manage-vpn-users) for more details.
+For IPsec/XAuth ("Cisco IPsec"), VPN users are specified in `/etc/ipsec.d/passwd`. Passwords in this file are salted and hashed. See [Manually manage VPN users](#manually-manage-vpn-users) for more details.
 
 ## Manage VPN users using helper scripts
 
-You may use these scripts to more easily manage VPN users: [add_vpn_user.sh](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/extras/add_vpn_user.sh), [del_vpn_user.sh](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/extras/del_vpn_user.sh) and [update_vpn_users.sh](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/extras/update_vpn_users.sh). They will update users for both IPsec/L2TP and IPsec/XAuth ("Cisco IPsec"). Replace command parameters below with your own values. For IKEv2, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
+You may use these scripts to more easily manage VPN users: [add_vpn_user.sh](../extras/add_vpn_user.sh), [del_vpn_user.sh](../extras/del_vpn_user.sh) and [update_vpn_users.sh](../extras/update_vpn_users.sh). They will update users for both IPsec/L2TP and IPsec/XAuth ("Cisco IPsec"). Replace command parameters below with your own values. For IKEv2, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
 
 **Note:** VPN users are stored in `/etc/ppp/chap-secrets` and `/etc/ipsec.d/passwd`. The scripts will backup these files before making changes, with `.old-date-time` suffix.
 
@@ -113,7 +113,7 @@ sh update_vpn_users.sh
 
 ## Manually manage VPN users
 
-For `IPsec/L2TP`, VPN users are specified in `/etc/ppp/chap-secrets`. The format of this file is:
+For IPsec/L2TP, VPN users are specified in `/etc/ppp/chap-secrets`. The format of this file is:
 
 ```bash
 "username1"  l2tpd  "password1"  *
@@ -123,7 +123,7 @@ For `IPsec/L2TP`, VPN users are specified in `/etc/ppp/chap-secrets`. The format
 
 You can add more users, use one line for each user. DO NOT use these special characters within values: `\ " '`
 
-For `IPsec/XAuth ("Cisco IPsec")`, VPN users are specified in `/etc/ipsec.d/passwd`. The format of this file is:
+For IPsec/XAuth ("Cisco IPsec"), VPN users are specified in `/etc/ipsec.d/passwd`. The format of this file is:
 
 ```bash
 username1:password1hashed:xauth-psk
@@ -141,8 +141,8 @@ openssl passwd -1 'password1'
 
 ## License
 
-Copyright (C) 2016-2021 <a href="https://www.linkedin.com/in/linsongui" target="_blank">Lin Song</a>   
+Copyright (C) 2016-2021 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/3.0/88x31.png" /></a>   
-This work is licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>  
+[![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
+This work is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)  
 Attribution required: please include my name in any derivative and let me know how you have improved it!
