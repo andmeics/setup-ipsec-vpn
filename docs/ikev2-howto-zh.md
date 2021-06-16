@@ -124,9 +124,9 @@ To customize IKEv2 or client options, run this script without arguments.
 
    ```console
    # 创建 VPN 连接（将服务器地址换成你自己的值）
-   powershell -command "Add-VpnConnection -ServerAddress '你的 VPN 服务器 IP（或者域名）' -Name 'My IKEv2 VPN' -TunnelType IKEv2 -AuthenticationMethod MachineCertificate -EncryptionLevel Required -PassThru"
+   powershell -command "Add-VpnConnection -ServerAddress '你的 VPN 服务器 IP（或者域名）' -Name 'IKEv2 VPN' -TunnelType IKEv2 -AuthenticationMethod MachineCertificate -EncryptionLevel Required -PassThru"
    # 设置 IPsec 参数
-   powershell -command "Set-VpnConnectionIPsecConfiguration -ConnectionName 'My IKEv2 VPN' -AuthenticationTransformConstants GCMAES128 -CipherTransformConstants GCMAES128 -EncryptionMethod AES256 -IntegrityCheckMethod SHA256 -PfsGroup None -DHGroup Group14 -PassThru -Force"
+   powershell -command "Set-VpnConnectionIPsecConfiguration -ConnectionName 'IKEv2 VPN' -AuthenticationTransformConstants GCMAES128 -CipherTransformConstants GCMAES128 -EncryptionMethod AES256 -IntegrityCheckMethod SHA256 -PfsGroup None -DHGroup Group14 -PassThru -Force"
    ```
 
    另外，你也可以手动创建 VPN 连接。详细步骤请看 [这里](https://wiki.strongswan.org/projects/strongswan/wiki/Win7Config)。如果你在配置 IKEv2 时指定了服务器的域名（而不是 IP 地址），则必须在 **Internet地址** 字段中输入该域名。
