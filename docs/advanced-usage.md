@@ -1,4 +1,4 @@
-# Advanced usage
+# Advanced Usage
 
 *Read this in other languages: [English](advanced-usage.md), [简体中文](advanced-usage-zh.md).*
 
